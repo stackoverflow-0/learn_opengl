@@ -1,0 +1,4 @@
+all:
+	g++ test.cpp -lglfw3dll -lglew32 -lglu32 -lglut32 -lopengl32  -o test
+clean:
+	rm *.o *.exe
