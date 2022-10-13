@@ -1,4 +1,3 @@
-
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <fstream>
@@ -21,23 +20,27 @@ float deltaTime = 0.0f;	// Time between current frame and last frame
 float lastFrame = 0.0f; // Time of last frame
 
 void frame_size_callback(GLFWwindow* window, int w,int h) {
-    glViewport(0,0,w,h);    // 摄像机视角
-    // glOrthof(-0.5,-0.5,-0.5,-0.5,-1,1);  //屏幕视角
+    glViewport(0,0,w,h);
 }
 
-float lastX = 400, lastY = 300;
+float lastX = 0.0, lastY = 0.0;
 float yaw = 0.0,pitch = 0.0;
 bool firstMouse = true;
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
-    if (firstMouse) {
+    if(firstMouse) {
         lastX = xpos;
         lastY = ypos;
         firstMouse = false;
     }
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+    if(glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+        lastX = xpos;
+        lastY = ypos;
+        return;
+    }
+    float xoffset = xpos - lastX ;
+    float yoffset = lastY - ypos ; // reversed since y-coordinates range from bottom to top
     lastX = xpos;
     lastY = ypos;
 
@@ -45,15 +48,13 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     xoffset *= sensitivity;
     yoffset *= sensitivity;
     yaw += xoffset;
-    pitch +=yoffset;
-    if(pitch > 89.0f)
-        pitch =  89.0f;
-    if(pitch < -89.0f)
-        pitch = -89.0f;
+    pitch += yoffset;
+    if(pitch > 89.0f) pitch =  89.0f;
+    if(pitch < -89.0f) pitch = -89.0f;
     glm::vec3 direction;
-    direction.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.x = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
     direction.y = sin(glm::radians(pitch));
-    direction.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
+    direction.z = -cos(glm::radians(yaw)) * cos(glm::radians(pitch));
     cameraFront = glm::normalize(direction);
     return;
 }
@@ -62,7 +63,7 @@ void input_process(GLFWwindow* window) {
     if(glfwGetKey(window,GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window,true);
     }
-    const float cameraSpeed = 2.0f * deltaTime; // adjust accordingly
+    float cameraSpeed = 2.0f * deltaTime; // adjust accordingly
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
@@ -178,20 +179,6 @@ GLFWwindow* init() {
     
     glEnable(GL_DEPTH_TEST);
     return window; 
-}
-
-void draw(unsigned int shaderProgram, unsigned int VAO, GLFWwindow* window) {
-    glClearColor(0.2f,0.3f,0.3f,1.0f);
-    glClear(GL_COLOR_BUFFER_BIT);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(shaderProgram);
-    
-    glBindVertexArray(VAO);
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
-
-    glfwSwapBuffers(window);
 }
 
 void create_texture(const char * path,unsigned int * texture) {
@@ -379,11 +366,8 @@ int main() {
             
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
-        
-
         glfwSwapBuffers(window);
 
-             
     }
     glDeleteBuffers(1,&VBO);
     glDeleteBuffers(1, &EBO);
