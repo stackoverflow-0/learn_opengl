@@ -31,11 +31,11 @@ bool firstMouse = true;
 
 void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
 
-    // if (firstMouse) {
-    //     lastX = xpos;
-    //     lastY = ypos;
-    //     firstMouse = false;
-    // }
+    if (firstMouse) {
+        lastX = xpos;
+        lastY = ypos;
+        firstMouse = false;
+    }
     float xoffset = xpos - lastX;
     float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
     lastX = xpos;
