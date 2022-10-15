@@ -31,22 +31,16 @@ class Sphere {
         }
     }
     void push_point(int i,int j) {
-        vert[p++] = r * sin(i * M_PI / stacks) * cos(2 * j * M_PI / slices);
+        vert[p++] =   r * sin(i * M_PI / stacks) * cos(2 * j * M_PI / slices);
         vert[p++] = - r * cos(i * M_PI / stacks);
-        vert[p++] = r * sin(i * M_PI / stacks) * sin(2 * j * M_PI / slices);
+        vert[p++] =   r * sin(i * M_PI / stacks) * sin(2 * j * M_PI / slices);
         
-    }
-
-    void check() {
-        std::cout<<vert[0]<<" "<<vert[1]<<" "<<vert[2]<<"\n";
-        for (int i = 0;i < slices * stacks * 6 *3 ;i += 3) { 
-            std::cout<<vert[i]<<" "<<vert[i+1]<<" "<<vert[i+2]<<"\n";
-        }
     }
 
     float * get_vert() { return vert; }
     int get_size() { return slices * stacks * 6 * 3; }
     int get_vnum() { return slices * stacks * 6; }
+
     private:
     float r;
     int slices;
@@ -55,12 +49,12 @@ class Sphere {
     float * vert;
 };
 
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  10.0f);
+glm::vec3 cameraPos   = glm::vec3(0.0f, 1.0f, 10.0f);
 glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
 glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
 
-float deltaTime = 0.0f;	// Time between current frame and last frame
-float lastFrame = 0.0f; // Time of last frame
+float deltaTime = 0.0f;
+float lastFrame = 0.0f;
 
 void frame_size_callback(GLFWwindow* window, int w,int h) {
     glViewport(0,0,w,h);
@@ -82,8 +76,9 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
         lastY = ypos;
         return;
     }
+    
     float xoffset = xpos - lastX ;
-    float yoffset = lastY - ypos ; // reversed since y-coordinates range from bottom to top
+    float yoffset = lastY - ypos ;
     lastX = xpos;
     lastY = ypos;
 
@@ -102,10 +97,19 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos) {
     return;
 }
 
+
+unsigned int draw_mode = GL_TRIANGLES;
+
 void input_process(GLFWwindow* window) {
+    static float cd = 0;
     if(glfwGetKey(window,GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window,true);
     }
+    if(glfwGetMouseButton(window,GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS && cd >= 0.1f) {
+        draw_mode = (draw_mode == GL_TRIANGLES) ? GL_LINE_LOOP : GL_TRIANGLES;
+        cd = 0.0f;
+    }
+    cd += deltaTime;
     float cameraSpeed = 2.0f * deltaTime; // adjust accordingly
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
         cameraPos += cameraSpeed * cameraFront;
@@ -119,32 +123,29 @@ void input_process(GLFWwindow* window) {
         cameraPos += cameraSpeed * cameraUp;
     if (glfwGetKey(window,GLFW_KEY_DOWN) == GLFW_PRESS)
         cameraPos -= cameraSpeed * cameraUp;
+
+
 }
 
 
 
-unsigned int create_shader(const char * vertexPath,const char * fragmentPath) {
+unsigned int load_Shader(const char * vertexPath,const char * fragmentPath) {
 
     std::string vertexCode;
     std::string fragmentCode;
     std::ifstream vShaderFile;
     std::ifstream fShaderFile;
-    // ensure ifstream objects can throw exceptions:
     vShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
     fShaderFile.exceptions (std::ifstream::failbit | std::ifstream::badbit);
     try 
     {
-        // open files
         vShaderFile.open(vertexPath);
         fShaderFile.open(fragmentPath);
         std::stringstream vShaderStream, fShaderStream;
-        // read file's buffer contents into streams
         vShaderStream << vShaderFile.rdbuf();
         fShaderStream << fShaderFile.rdbuf();		
-        // close file handlers
         vShaderFile.close();
         fShaderFile.close();
-        // convert stream into string
         vertexCode   = vShaderStream.str();
         fragmentCode = fShaderStream.str();		
     }
@@ -212,10 +213,9 @@ int main() {
     
     auto window = init();
 
-    auto shaderProgram = create_shader("shader/vshader.vs","shader/fshader.fs");
+    auto shaderProgram = load_Shader("shader/vshader.vs","shader/fshader.fs");
 
     auto sphere = Sphere(1,20,20);
-    // sphere.check();
     unsigned int VBO;
     unsigned int VAO;
     glGenBuffers(1,&VBO);
@@ -241,6 +241,7 @@ int main() {
     unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
     unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
     unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
+    unsigned int sphereIndexLoc = glGetUniformLocation(shaderProgram,"sphere_index");
     glm::mat4 view;
 
     const float radius = 10.0f;
@@ -254,42 +255,38 @@ int main() {
 
         input_process(window);
 
-        // glActiveTexture(GL_TEXTURE0);
-        // glBindTexture(GL_TEXTURE_2D,texture1);
-        // glActiveTexture(GL_TEXTURE1);
-        // glBindTexture(GL_TEXTURE_2D,texture2);
 
         glm::mat4 view = glm::mat4(1.0f);
         view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        float camX = cos(glfwGetTime()) * radius;
-        float camY = sin(glfwGetTime()) * radius;
         view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
         
-        
         glm::mat4 model = glm::mat4(1.0f);
 
         // draw ball 0 
+        glUniform1f(sphereIndexLoc,0);
         model = glm::rotate(model,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        glDrawArrays(GL_LINE_LOOP, 0, sphere.get_vnum());
+        glDrawArrays(draw_mode, 0, sphere.get_vnum());
 
 
         //draw ball 1
+        glUniform1f(sphereIndexLoc,1);
         model = glm::scale(model,glm::vec3(0.5,0.5,0.5));
         model = glm::translate(model, glm::vec3(
             6.0f * sin( 3.0f * (float)glfwGetTime()) ,
             0,
             6.0f * cos( 3.0f * (float)glfwGetTime()) 
         ));
-        model = glm::rotate(model,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
+        model = glm::rotate(model,100.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        glDrawArrays(GL_LINE_LOOP, 0, sphere.get_vnum());
+        glDrawArrays(draw_mode, 0, sphere.get_vnum());
 
         //draw ball 2
+        glUniform1f(sphereIndexLoc,2);
         model = glm::scale(model,glm::vec3(0.5,0.5,0.5));
         model = glm::translate(model, glm::vec3(
             4.0f * sin( 2.0f * (float)glfwGetTime()) ,
@@ -298,7 +295,9 @@ int main() {
         ));
         model = glm::rotate(model,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        glDrawArrays(GL_LINE_LOOP, 0, sphere.get_vnum());
+        glDrawArrays(draw_mode, 0, sphere.get_vnum());
+       
+
         glfwSwapBuffers(window);
 
     }
