@@ -282,6 +282,7 @@ int main() {
 
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // 绑定节点串
