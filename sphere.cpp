@@ -34,7 +34,6 @@ class Sphere {
         vert[p++] =   r * sin(i * M_PI / stacks) * cos(2 * j * M_PI / slices);
         vert[p++] = - r * cos(i * M_PI / stacks);
         vert[p++] =   r * sin(i * M_PI / stacks) * sin(2 * j * M_PI / slices);
-        
     }
 
     float * get_vert() { return vert; }
@@ -123,8 +122,6 @@ void input_process(GLFWwindow* window) {
         cameraPos += cameraSpeed * cameraUp;
     if (glfwGetKey(window,GLFW_KEY_DOWN) == GLFW_PRESS)
         cameraPos -= cameraSpeed * cameraUp;
-
-
 }
 
 
@@ -245,7 +242,7 @@ int main() {
     glm::mat4 view;
 
     const float radius = 10.0f;
-    glClearColor(0.0f,0.3f,0.3f,1.0f);
+    glClearColor(0.0f,0.0f,0.0f,1.0f);
     while(!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         glfwPollEvents();// 鼠标/键盘事件处理函数入口
@@ -266,37 +263,51 @@ int main() {
         
         glm::mat4 model = glm::mat4(1.0f);
 
-        // draw ball 0 
-        glUniform1f(sphereIndexLoc,0);
+        // draw sun 
+        glUniform1i(sphereIndexLoc,0);
         model = glm::rotate(model,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glDrawArrays(draw_mode, 0, sphere.get_vnum());
 
 
-        //draw ball 1
-        glUniform1f(sphereIndexLoc,1);
-        model = glm::scale(model,glm::vec3(0.5,0.5,0.5));
-        model = glm::translate(model, glm::vec3(
-            6.0f * sin( 3.0f * (float)glfwGetTime()) ,
+        //draw planet 1
+        glUniform1i(sphereIndexLoc,1);
+        auto model_p0 = glm::mat4(1.0f);
+        model_p0 = glm::scale(model_p0,glm::vec3(0.5,0.5,0.5));
+        model_p0 = glm::translate(model_p0, glm::vec3(
+            6.0f * sin( 4.0f * (float)glfwGetTime()) ,
             0,
-            6.0f * cos( 3.0f * (float)glfwGetTime()) 
+            6.0f * cos( 4.0f * (float)glfwGetTime()) 
         ));
-        model = glm::rotate(model,100.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        model_p0 = glm::rotate(model_p0,100.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model_p0));
         glDrawArrays(draw_mode, 0, sphere.get_vnum());
 
-        //draw ball 2
-        glUniform1f(sphereIndexLoc,2);
-        model = glm::scale(model,glm::vec3(0.5,0.5,0.5));
-        model = glm::translate(model, glm::vec3(
+        //draw planet 2
+        glUniform1i(sphereIndexLoc,2);
+        auto model_p1 = glm::mat4(1.0f);
+        model_p1 = glm::scale(model_p1,glm::vec3(0.5,0.5,0.5));
+        model_p1 = glm::rotate(model_p1, glm::radians(30.0f),glm::vec3(0,0,1));
+        model_p1 = glm::translate(model_p1, glm::vec3(
+            12.0f * sin( 2.0f * (float)glfwGetTime()) ,
+            0,
+            12.0f * cos( 2.0f * (float)glfwGetTime()) 
+        ));
+        model_p1 = glm::rotate(model_p1,100.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model_p1));
+        glDrawArrays(draw_mode, 0, sphere.get_vnum());
+
+        //draw satellite 1
+        glUniform1i(sphereIndexLoc,3);
+        auto model_s0 = glm::scale(model_p1,glm::vec3(0.5,0.5,0.5));
+        model_s0 = glm::translate(model_s0, glm::vec3(
             4.0f * sin( 2.0f * (float)glfwGetTime()) ,
             0,
             4.0f * cos( 2.0f * (float)glfwGetTime()) 
         ));
-        model = glm::rotate(model,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        model_s0 = glm::rotate(model_s0,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model_s0));
         glDrawArrays(draw_mode, 0, sphere.get_vnum());
-       
 
         glfwSwapBuffers(window);
 

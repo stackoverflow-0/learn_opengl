@@ -3,8 +3,25 @@ out vec4 FragColor;
 
 in vec4 pos;
 
-uniform float sphere_index;
+uniform int sphere_index;
 void main()
 {
-    FragColor = vec4( sphere_index / 3.0, 1.0 ,sphere_index / 3.0,1.0);
+    switch (sphere_index){
+        case 0 :
+        FragColor = vec4( 1.0, 0.0 ,0.0,1.0);
+        break;
+        case 1 :
+        FragColor = vec4( 0.0, 1.0 ,0.0,1.0);
+        break;
+        case 2 :
+        FragColor = vec4( 0.0, 0.0 ,1.0,1.0);
+        break;
+        case 3 :
+        FragColor = vec4( 0.0, 1.0 ,1.0,1.0);
+        break;
+        default:
+        FragColor = vec4( 1.0, 1.0 ,1.0,1.0);
+    }
+
 }
+    
