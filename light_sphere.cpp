@@ -343,7 +343,6 @@ int main() {
         glDrawArrays(draw_mode, 0, sphere.get_vnum());
 
         glfwSwapBuffers(window);
-
     }
     glDeleteBuffers(1,&VBO);
     glDeleteVertexArrays(1,&VAO);

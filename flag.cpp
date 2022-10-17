@@ -4,72 +4,32 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 
-// void draw_circle(GLfloat r, GLfloat x_offset, GLfloat y_offset)
-// {
-//     glBegin(GL_POLYGON);
-//     for (float d = 0; d < 2 * M_PI; d += 0.001)
-//     {
-//         glVertex2f(x_offset + r * cos(d), y_offset + r * sin(d));
-//     }
-//     glEnd();
-// }
-
-// void draw_star(GLfloat r, GLfloat x_offset, GLfloat y_offset)
-// {
-//     GLfloat k = sin(M_PI / 10) / sin(M_PI * 7 / 10);
-//     GLfloat c = 1;
-//     glBegin(GL_POLYGON);
-//     for (int d = 0; d < 10; d++)
-//     {
-//         if (d % 2)
-//             c = 1;
-//         else
-//             c = k;
-//         glVertex2f(x_offset + c * r * cos((d * 2 - 1) * M_PI / 10), y_offset + c * r * sin((d * 2 - 1) * M_PI / 10));
-//     }
-//     glEnd();
-// }
-class Sphere {
-    public:
-    Sphere(float r , int slices, int stacks) : r(r),slices(slices),stacks(stacks) {
-        vert = new float[slices * stacks * 6 * 3]();
-        glColor3f(238.0/255.0, 37.0/255.0, 54.0/255.0);
-        for(int i = 0;i < stacks;i++) {
-            for(int j = 0;j < slices;j++) {
-                glBegin(GL_LINE_LOOP);
-                push_point(i,j);
-                push_point(i+1,j+1);
-                push_point(i,j+1);
-                glEnd();
-                glBegin(GL_LINE_LOOP);
-                push_point(i,j);
-                push_point(i+1,j);
-                push_point(i+1,j+1);
-                glEnd();
-            }
-        }
-        
+void draw_circle(GLfloat r, GLfloat x_offset, GLfloat y_offset)
+{
+    glBegin(GL_POLYGON);
+    for (float d = 0; d < 2 * M_PI; d += 0.001)
+    {
+        glVertex2f(x_offset + r * cos(d), y_offset + r * sin(d));
     }
-    void push_point(int i,int j) {
-        glVertex3f(
-        //  r * cos(i * M_PI / stacks) * cos(j * M_PI / slices),
-        //  r * cos(i * M_PI / stacks) * sin(j * M_PI / slices),
-        //  r * sin(i * M_PI / stacks));
-        r * sin(i * M_PI / stacks) * cos(2 *j * M_PI / slices),
-        r * sin(i * M_PI / stacks) * sin(2 *j * M_PI / slices),
-        - r * cos(i * M_PI / stacks));
+    glEnd();
+}
+
+void draw_star(GLfloat r, GLfloat x_offset, GLfloat y_offset)
+{
+    GLfloat k = sin(M_PI / 10) / sin(M_PI * 7 / 10);
+    GLfloat c = 1;
+    glBegin(GL_POLYGON);
+    for (int d = 0; d < 10; d++)
+    {
+        if (d % 2)
+            c = 1;
+        else
+            c = k;
+        glVertex2f(x_offset + c * r * cos((d * 2 - 1) * M_PI / 10), y_offset + c * r * sin((d * 2 - 1) * M_PI / 10));
     }
+    glEnd();
+}
 
-    float * get_vert() { return vert; }
-    int get_size() { return slices * stacks * 6 * 3; }
-
-    private:
-    float r;
-    int slices;
-    int stacks;
-    int p = 0;
-    float * vert;
-};
 
 void display(void)
 {
