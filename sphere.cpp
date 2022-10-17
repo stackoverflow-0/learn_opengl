@@ -184,7 +184,7 @@ GLFWwindow* init() {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR,3);
     glfwWindowHint(GLFW_OPENGL_PROFILE,GLFW_OPENGL_CORE_PROFILE);
     
-    GLFWwindow* window = glfwCreateWindow(800, 600, "LearnOpenGL", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Assignment 4 @ 3200100515 ", NULL, NULL);
     
     if (window == NULL)
     {
@@ -245,7 +245,7 @@ int main() {
     glClearColor(0.0f,0.0f,0.0f,1.0f);
     while(!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glfwPollEvents();// 鼠标/键盘事件处理函数入口
+        glfwPollEvents();
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;  
@@ -253,9 +253,7 @@ int main() {
         input_process(window);
 
 
-        glm::mat4 view = glm::mat4(1.0f);
-        view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-        view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
+        auto view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp); 
         glm::mat4 projection;
         projection = glm::perspective(glm::radians(45.0f), 800.0f / 600.0f, 0.1f, 100.0f);
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
