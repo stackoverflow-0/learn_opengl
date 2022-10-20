@@ -74,12 +74,12 @@ class Model {
     Model(const char * path) {
         fp = fopen(path,"r");
         if(fp == nullptr) {
-            std::cout << "cant open model file\n"; 
+            throw std::runtime_error("open obj failed");
         }
         
         while (1) {
             char header[64];
-            if (fscanf(fp,"%s",header) != EOF) break;
+            if (fscanf(fp,"%s",header) == EOF) break;
 
             if (!strcmp(header,"v")) {
                 glm::vec3 vertex;
@@ -97,19 +97,23 @@ class Model {
                 vn.push_back(norm);
             }
             else if (!strcmp(header, "f")){
-                
-                
+                int vertex_ind,textrue_ind,norm_ind;
+                while (fscanf(fp,"%d/%d/%d",&vertex_ind,&textrue_ind,&norm_ind)) {
+                    indices.push_back(vertex_ind);
+                }
             }
             
         }
 
     }
-    private :
-    FILE * fp = nullptr ;
     std::vector<glm::vec3>  v;
     std::vector<glm::vec2>  vt;
     std::vector<glm::vec3>  vn;
     std::vector<int> indices;
+    int get_vertex_num() { return indices.size(); }
+    private :
+    FILE * fp = nullptr ;
+    
 };
 
 
@@ -275,22 +279,27 @@ int main() {
     
     auto window = init();
 
-    auto shaderProgram = load_Shader("shader/light_vshader.vs","shader/light_fshader.fs");
+    auto shaderProgram = load_Shader("shader/vshader.vs","shader/fshader.fs");
 
     // auto sphere = Sphere(1,400,200);
+    auto objmodel = Model("model/chair.obj");
     unsigned int VBO;
     unsigned int VAO;
+    unsigned int EBO;
     glGenBuffers(1,&VBO);
 
     glGenVertexArrays(1,&VAO);
 
     glBindVertexArray(VAO);
-
-
+    
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sphere.get_size() * sizeof(float), sphere.get_vert(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER,  objmodel.v.size() * sizeof(glm::vec3), &objmodel.v[0], GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO); // 绑定节点串
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, objmodel.indices.size() * sizeof(int), &objmodel.indices[0], GL_STATIC_DRAW);
+
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
@@ -303,10 +312,10 @@ int main() {
     unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
     unsigned int sphereIndexLoc = glGetUniformLocation(shaderProgram,"sphere_index");
 
-    unsigned int objectColorLoc = glGetUniformLocation(shaderProgram,"objectColor");
-    unsigned int lightColorLoc = glGetUniformLocation(shaderProgram,"lightColor");
-    unsigned int lightPosLoc = glGetUniformLocation(shaderProgram,"lightPos");
-    unsigned int viewPosLoc = glGetUniformLocation(shaderProgram,"viewPos");
+    // unsigned int objectColorLoc = glGetUniformLocation(shaderProgram,"objectColor");
+    // unsigned int lightColorLoc = glGetUniformLocation(shaderProgram,"lightColor");
+    // unsigned int lightPosLoc = glGetUniformLocation(shaderProgram,"lightPos");
+    // unsigned int viewPosLoc = glGetUniformLocation(shaderProgram,"viewPos");
 
     glm::vec3 objectColor = glm::vec3(0.8,0.8,0.2);
 
@@ -314,9 +323,9 @@ int main() {
 
     glm::vec3 lightPos = glm::vec3(100.0,0.0,0.0);
 
-    glUniform3fv(objectColorLoc,1,&objectColor[0]);
-    glUniform3fv(lightColorLoc,1,&lightColor[0]);
-    glUniform3fv(lightPosLoc,1,&lightPos[0]);
+    // glUniform3fv(objectColorLoc,1,&objectColor[0]);
+    // glUniform3fv(lightColorLoc,1,&lightColor[0]);
+    // glUniform3fv(lightPosLoc,1,&lightPos[0]);
 
     glm::mat4 view;
 
@@ -338,7 +347,7 @@ int main() {
         glUniformMatrix4fv(viewLoc, 1, GL_FALSE, glm::value_ptr(view));
         glUniformMatrix4fv(projectionLoc, 1, GL_FALSE, glm::value_ptr(projection));
         
-        glUniform3fv(viewPosLoc,1,&cameraPos[0]);
+        // glUniform3fv(viewPosLoc,1,&cameraPos[0]);
 
         
 
@@ -347,51 +356,52 @@ int main() {
         glUniform1i(sphereIndexLoc,0);
         model = glm::rotate(model,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-        glDrawArrays(draw_mode, 0, sphere.get_vnum());
+        // glDrawArrays(draw_mode, 0, );
+        glDrawElements(GL_TRIANGLES, objmodel.get_vertex_num(), GL_UNSIGNED_INT, 0);
 
+        // //draw planet 1
+        // glUniform1i(sphereIndexLoc,1);
+        // auto model_p0 = glm::mat4(1.0f);
+        // model_p0 = glm::scale(model_p0,glm::vec3(0.5,0.5,0.5));
+        // model_p0 = glm::translate(model_p0, glm::vec3(
+        //     6.0f * sin( 4.0f * (float)glfwGetTime()) ,
+        //     0,
+        //     6.0f * cos( 4.0f * (float)glfwGetTime()) 
+        // ));
+        // model_p0 = glm::rotate(model_p0,100.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
+        // glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model_p0));
+        // glDrawArrays(draw_mode, 0, objmodel.get_vertex_num());
 
-        //draw planet 1
-        glUniform1i(sphereIndexLoc,1);
-        auto model_p0 = glm::mat4(1.0f);
-        model_p0 = glm::scale(model_p0,glm::vec3(0.5,0.5,0.5));
-        model_p0 = glm::translate(model_p0, glm::vec3(
-            6.0f * sin( 4.0f * (float)glfwGetTime()) ,
-            0,
-            6.0f * cos( 4.0f * (float)glfwGetTime()) 
-        ));
-        model_p0 = glm::rotate(model_p0,100.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model_p0));
-        glDrawArrays(draw_mode, 0, sphere.get_vnum());
+        // //draw planet 2
+        // glUniform1i(sphereIndexLoc,2);
+        // auto model_p1 = glm::mat4(1.0f);
+        // model_p1 = glm::scale(model_p1,glm::vec3(0.5,0.5,0.5));
+        // model_p1 = glm::rotate(model_p1, glm::radians(30.0f),glm::vec3(0,0,1));
+        // model_p1 = glm::translate(model_p1, glm::vec3(
+        //     12.0f * sin( 2.0f * (float)glfwGetTime()) ,
+        //     0,
+        //     12.0f * cos( 2.0f * (float)glfwGetTime()) 
+        // ));
+        // model_p1 = glm::rotate(model_p1,100.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
+        // glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model_p1));
+        // glDrawArrays(draw_mode, 0, objmodel.get_vertex_num());
 
-        //draw planet 2
-        glUniform1i(sphereIndexLoc,2);
-        auto model_p1 = glm::mat4(1.0f);
-        model_p1 = glm::scale(model_p1,glm::vec3(0.5,0.5,0.5));
-        model_p1 = glm::rotate(model_p1, glm::radians(30.0f),glm::vec3(0,0,1));
-        model_p1 = glm::translate(model_p1, glm::vec3(
-            12.0f * sin( 2.0f * (float)glfwGetTime()) ,
-            0,
-            12.0f * cos( 2.0f * (float)glfwGetTime()) 
-        ));
-        model_p1 = glm::rotate(model_p1,100.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model_p1));
-        glDrawArrays(draw_mode, 0, sphere.get_vnum());
-
-        //draw satellite 1
-        glUniform1i(sphereIndexLoc,3);
-        auto model_s0 = glm::scale(model_p1,glm::vec3(0.5,0.5,0.5));
-        model_s0 = glm::translate(model_s0, glm::vec3(
-            4.0f * sin( 2.0f * (float)glfwGetTime()) ,
-            0,
-            4.0f * cos( 2.0f * (float)glfwGetTime()) 
-        ));
-        model_s0 = glm::rotate(model_s0,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
-        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model_s0));
-        glDrawArrays(draw_mode, 0, sphere.get_vnum());
+        // //draw satellite 1
+        // glUniform1i(sphereIndexLoc,3);
+        // auto model_s0 = glm::scale(model_p1,glm::vec3(0.5,0.5,0.5));
+        // model_s0 = glm::translate(model_s0, glm::vec3(
+        //     4.0f * sin( 2.0f * (float)glfwGetTime()) ,
+        //     0,
+        //     4.0f * cos( 2.0f * (float)glfwGetTime()) 
+        // ));
+        // model_s0 = glm::rotate(model_s0,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
+        // glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model_s0));
+        // glDrawArrays(draw_mode, 0, objmodel.get_vertex_num());
 
         glfwSwapBuffers(window);
     }
     glDeleteBuffers(1,&VBO);
+    glDeleteBuffers(1,&EBO);
     glDeleteVertexArrays(1,&VAO);
     glfwTerminate();
     return 0;

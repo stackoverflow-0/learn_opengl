@@ -8,6 +8,11 @@
                 "-fdiagnostics-color=always",
                 "-g",
                 "${file}",
+                "-lglfw3dll", 
+                "-lglew32",
+                "-lglu32",
+                "-lglut32",
+                "-lopengl32",
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe"
             ],
