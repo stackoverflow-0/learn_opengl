@@ -29,5 +29,11 @@ void main()
     vec3 specular = specularStrength * spec * lightColor;  
 
     vec3 result = (ambient + diffuse + specular) * objectColor;
-    FragColor = vec4(result, 1.0);
+    if (sphere_index == 0) {
+        FragColor = vec4(result, 1.0);
+    }
+    else if (sphere_index == 1) {
+        FragColor = vec4(1,1,1,1);
+    }
+       
 }

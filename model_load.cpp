@@ -118,7 +118,7 @@ Model::Model(const char * path)
 Model::~Model()
 {
     glDeleteBuffers(1,&vertexBuffer);
-
+    glDeleteBuffers(1,&normalBuffer);
     glDeleteVertexArrays(1,&VAO);
 }
 
@@ -277,6 +277,12 @@ GLFWwindow* init() {
         throw std::runtime_error("glewInit failed");
     
     glEnable(GL_DEPTH_TEST);
+    glEnable(GL_STENCIL_TEST);
+    glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW); 
     return window; 
 }
 
@@ -295,7 +301,7 @@ int main() {
     unsigned int modelLoc = glGetUniformLocation(shaderProgram, "model");
     unsigned int viewLoc = glGetUniformLocation(shaderProgram, "view");
     unsigned int projectionLoc = glGetUniformLocation(shaderProgram, "projection");
-    unsigned int sphereIndexLoc = glGetUniformLocation(shaderProgram,"sphere_vertex_index");
+    unsigned int sphereIndexLoc = glGetUniformLocation(shaderProgram,"sphere_index");
 
     unsigned int objectColorLoc = glGetUniformLocation(shaderProgram,"objectColor");
     unsigned int lightColorLoc = glGetUniformLocation(shaderProgram,"lightColor");
@@ -306,7 +312,7 @@ int main() {
 
     glm::vec3 lightColor = glm::vec3(1.0,1.0,1.0);
 
-    glm::vec3 lightPos = glm::vec3(0.0,10.0,0.0);
+    glm::vec3 lightPos = glm::vec3(10.0,10.0,0.0);
 
     glUniform3fv(objectColorLoc,1,&objectColor[0]);
     glUniform3fv(lightColorLoc,1,&lightColor[0]);
@@ -316,8 +322,13 @@ int main() {
 
     const float radius = 10.0f;
     glClearColor(0.0f,0.0f,0.0f,1.0f);
+    
+    // glDepthFunc(GL_NOTEQUAL);
+    // glDepthFunc(GL_ALWAYS);
+
+    
     while(!glfwWindowShouldClose(window)) {
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
         glfwPollEvents();
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -334,19 +345,35 @@ int main() {
 
         glUniform3fv(viewPosLoc,1,&cameraPos[0]);
         
-        glm::mat4 model = glm::mat4(1.0f);
+        
+        
+        glStencilFunc(GL_ALWAYS, 1, 0xFF); 
+        glStencilMask(0xFF); 
 
-        // draw sun 
+        // draw chair
+        glm::mat4 model = glm::mat4(1.0f);
         glUniform1i(sphereIndexLoc,0);
-        // model = glm::rotate(model,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
+        model = glm::rotate(model,10.0f * glm::radians((float)glfwGetTime()),glm::vec3(0,1,0));
         glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
         glDrawArrays(draw_mode, 0, m.get_vertex_num());
-        // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m.EBO);
-        // glDrawElements(GL_TRIANGLES, m.get_face_vertex_num(), GL_UNSIGNED_INT, 0);
 
+        // change color
+        // draw arrays without depth buffer , every fragment pass z-buffer
+        glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+        glStencilMask(0x00);
+        glDisable(GL_DEPTH_TEST);
+
+        glUniform1i(sphereIndexLoc,1);
+        model = glm::scale(model,glm::vec3(1.1f,1.1f,1.1f));
+        glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+        glDrawArrays(draw_mode, 0, m.get_vertex_num());
+
+        glStencilMask(0xFF);
+        glStencilFunc(GL_ALWAYS, 0, 0xFF);
+        glEnable(GL_DEPTH_TEST);
 
         glfwSwapBuffers(window);
-
+        
     }
     
     glfwTerminate();
